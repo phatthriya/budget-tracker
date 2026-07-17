@@ -152,10 +152,61 @@
   .toast.ok{background:var(--accent-ink)}
   @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
+  /* mode switch */
+  .modebar{display:flex;margin:2px 0 14px}
+  .seg{display:inline-flex;background:#EAEFEC;border-radius:999px;padding:3px;gap:2px}
+  .seg button{border:none;background:none;padding:7px 20px;border-radius:999px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
+  .seg button.on{background:var(--surface);color:var(--accent-ink);box-shadow:0 1px 2px rgba(20,40,32,.08)}
+
+  /* dashboard */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .card .lbl{font-size:13px;color:var(--muted);margin-bottom:7px}
+  .card .val{font-size:27px;font-weight:600;letter-spacing:-.01em;line-height:1.1}
+  .card .val small{font-size:14px;font-weight:400;color:var(--muted);margin-left:5px}
+  .card .sub{font-size:13px;margin-top:6px;color:var(--muted)}
+  .card.accent{background:var(--accent-soft);border-color:transparent}
+  .card.accent .val{color:var(--accent-ink)}
+  .dash-sec{margin-bottom:22px}
+  .dash-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-weight:500}
+  .barrow{margin-bottom:13px}
+  .barrow .top{display:flex;justify-content:space-between;gap:12px;font-size:14px;margin-bottom:5px}
+  .barrow .top .amt{color:var(--muted);font-family:"IBM Plex Mono",monospace;white-space:nowrap;font-size:13px}
+  .bartrack{height:14px;background:#EAEFEC;border-radius:7px;overflow:hidden}
+  .barfill{height:100%;background:var(--accent);border-radius:7px;transition:width .55s cubic-bezier(.4,0,.2,1)}
+  .barfill.warn{background:#D0951F}
+  .barfill.over{background:var(--danger)}
+  .warnbox{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:12px 15px;margin-bottom:22px;font-size:14px;line-height:1.7}
+  .warnbox b{font-weight:500}
+  .dash-review{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:2px 16px;margin-bottom:20px}
+  .dash-review summary{cursor:pointer;padding:13px 0;font-weight:500;list-style:none}
+  .dash-review summary::-webkit-details-marker{display:none}
+  .dash-review summary::before{content:"›";display:inline-block;margin-right:9px;color:var(--faint);transition:transform .15s}
+  .dash-review[open] summary::before{transform:rotate(90deg)}
+  .rev-note{font-size:13px;color:var(--muted);margin:0 0 12px;line-height:1.6}
+  .rev-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .rev-tbl th{text-align:left;color:var(--faint);font-weight:500;font-size:12px;padding:7px 8px;border-bottom:1px solid var(--line)}
+  .rev-tbl td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .rev-tbl td.num,.rev-tbl th.num{text-align:right}
+  .rev-tbl input[type=text]{width:108px;padding:5px 8px;font-family:"IBM Plex Mono",monospace;font-size:13px;text-align:right;border:1px solid var(--line-strong);border-radius:6px}
+  .rev-tbl input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .rev-tbl input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+  .dash-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .dash-actions .btn[disabled]{opacity:.5;cursor:default}
+  .dash-print-title{display:none}
+  @media print{
+    header,.modebar,#statusChip,#editView,.dash-actions,.dash-review,.hint,#memNotice{display:none!important}
+    .dash-print-title{display:block;font-size:20px;font-weight:600;margin-bottom:18px}
+    body{background:#fff}
+    .card{border:1px solid #ccc}
+    .barfill{transition:none}
+  }
+
   .hidden{display:none!important}
   @media (max-width:640px){
     .bar,main{padding-left:14px;padding-right:14px}
     .brand span.full{display:none}
+    .cards{grid-template-columns:1fr}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -203,6 +254,14 @@
       <span id="statusChip" class="status clean"><span class="dot"></span><span id="statusText">บันทึกแล้ว</span></span>
     </div>
 
+    <div class="modebar">
+      <div class="seg" id="modeSeg">
+        <button data-mode="edit" class="on">แก้ไขข้อมูล</button>
+        <button data-mode="dash">แดชบอร์ด</button>
+      </div>
+    </div>
+
+    <div id="editView">
     <div class="rail-wrap">
       <div class="rail" id="rail"></div>
       <div class="rail-ind" id="railInd"></div>
@@ -237,6 +296,31 @@
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M4 10a6 6 0 0110-4.5M16 10a6 6 0 01-10 4.5M13 5h3V2M7 15H4v3"/></svg>แทนที่ทั้งไฟล์</button>
         <button class="btn" id="btnExportXlsx">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M10 3v10m0 0l-3.5-3.5M10 13l3.5-3.5M4 16h12"/></svg>ดาวน์โหลด Excel</button>
+      </div>
+    </div>
+    </div><!-- /editView -->
+
+    <div id="dashView" class="hidden">
+      <div class="dash-print-title">รายงานสรุปงบประมาณ · ปีงบประมาณ <span id="dashYear"></span></div>
+      <div class="cards" id="dashCards"></div>
+      <div class="dash-sec">
+        <div class="dash-h">
+          <span>การใช้จ่ายแยกตามหมวด (มากไปน้อย)</span>
+          <button class="btn btn-sm" id="btnRecalc">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M4 10a6 6 0 0110-4.5M16 10a6 6 0 01-10 4.5M13 5h3V2M7 15H4v3"/></svg>คำนวณใหม่จากข้อมูล</button>
+        </div>
+        <div id="dashBars"></div>
+      </div>
+      <div id="dashWarn"></div>
+      <details class="dash-review">
+        <summary>ตรวจสอบและปรับตัวเลขรายแท็บ</summary>
+        <p class="rev-note">ระบบเดาตัวเลข “งบประมาณ / เบิก / คงเหลือ” จากข้อมูลให้อัตโนมัติ — ติ๊กเลือกแท็บที่จะนำมารวมในสรุป และแก้ตัวเลขทับได้ถ้าเดาไม่ตรง (แท็บ “รายเดือน / คุม / สรุป” ถูกตัดออกอัตโนมัติเพื่อไม่ให้นับซ้ำ)</p>
+        <div style="overflow:auto"><table class="rev-tbl" id="revTbl"></table></div>
+      </details>
+      <div class="dash-actions">
+        <button class="btn btn-primary" id="btnPrint">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M6 8V3h8v5M6 15H4v-4a1 1 0 011-1h10a1 1 0 011 1v4h-2M6 12h8v5H6z"/></svg>พิมพ์ / บันทึกเป็น PDF</button>
+        <button class="btn" id="btnCompare" disabled title="ต้องมีข้อมูลตั้งแต่ 2 ปีขึ้นไป">เปรียบเทียบรายปี (รอข้อมูลปีถัดไป)</button>
       </div>
     </div>
   </section>
@@ -291,7 +375,7 @@ function kvDel(k){
 const KEY = { years:"years", saved:y=>`y:${y}:saved`, draft:y=>`y:${y}:draft` };
 
 /* ---------- state ---------- */
-const state = { years:[], year:null, saved:null, working:null, hasDraft:false, dirty:false, active:0 };
+const state = { years:[], year:null, saved:null, working:null, hasDraft:false, dirty:false, active:0, mode:"edit" };
 const clone = o => JSON.parse(JSON.stringify(o));
 
 /* ---------- helpers ---------- */
@@ -398,6 +482,7 @@ function showWorkspace(){
   $("#wsSub").textContent = `${total} แท็บ · บันทึกล่าสุด ${when}`;
   state.active = Math.min(state.active, total-1);
   renderRail(); renderGrid(); setStatus(); renderYearPick();
+  setMode(state.mode || "edit");
 }
 function renderYearPick(){
   const box = $("#yearPick");
@@ -591,6 +676,28 @@ function wire(){
   $("#btnAddRow").onclick = addRow;
   $("#btnAddCol").onclick = addCol;
 
+  // dashboard
+  $("#modeSeg").addEventListener("click", e=>{ const b=e.target.closest("button"); if(b) setMode(b.dataset.mode); });
+  $("#btnRecalc").onclick = ()=>{
+    state.working.sheets.forEach(s=>{ if(s._dash){ delete s._dash.budget; delete s._dash.used; } });
+    renderDashboard(); toast("คำนวณใหม่จากข้อมูลแล้ว", true);
+  };
+  $("#btnPrint").onclick = ()=> window.print();
+  const rev = $("#revTbl");
+  rev.addEventListener("change", e=>{
+    const i = +e.target.dataset.i; if(isNaN(i)) return;
+    const sh = state.working.sheets[i]; sh._dash = sh._dash || {};
+    if(e.target.type==="checkbox"){ sh._dash.include = e.target.checked; }
+    else { const v = parseNum(e.target.value); sh._dash[e.target.dataset.f] = isNaN(v) ? null : v; }
+    markDirty(null); renderDashboard();
+  });
+  rev.addEventListener("click", e=>{
+    const b = e.target.closest("button[data-reset]"); if(!b) return;
+    const sh = state.working.sheets[+b.dataset.reset];
+    if(sh._dash){ delete sh._dash.budget; delete sh._dash.used; }
+    markDirty(null); renderDashboard();
+  });
+
   // drag & drop
   const drop = $("#drop");
   ["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("hot");}));
@@ -608,7 +715,136 @@ function focusCell(r,c){
   }
 }
 
-/* ---------- boot ---------- */
+/* ---------- dashboard (phase 2) ---------- */
+function parseNum(s){
+  if(s==null) return NaN;
+  let t = String(s).trim();
+  if(t==="" ) return NaN;
+  if(t==="-"||t==="–"||t==="—") return 0;
+  const neg = /^-/.test(t) || /^\(.*\)$/.test(t);
+  t = t.replace(/[(),\s]/g,"").replace(/[^0-9.]/g,"");
+  if(t==="") return NaN;
+  const n = parseFloat(t);
+  if(isNaN(n)) return NaN;
+  return neg ? -n : n;
+}
+const fmt = n => (n==null||isNaN(n)) ? "—" : Math.round(n).toLocaleString("th-TH");
+const pctf = (u,b) => (b && b>0 && u!=null && !isNaN(u)) ? (u/b*100) : null;
+
+/* auto-detect budget / used / remaining from an irregular sheet */
+function detectMetrics(sheet){
+  const rows = sheet.rows;
+  let budget = null;
+  for(const r of rows){
+    const label = ((r[0]||"") + " " + (r[1]||"")).trim();
+    if(/^งบประมาณ/.test(label)){
+      let mx = null;
+      for(const c of r){ const n = parseNum(c); if(!isNaN(n) && (mx==null || n>mx)) mx = n; }
+      if(mx!=null){ budget = mx; break; }
+    }
+  }
+  let balCol = -1;
+  const scan = Math.min(6, rows.length);
+  for(let ri=0; ri<scan; ri++){
+    (rows[ri]||[]).forEach((c,ci)=>{ if(String(c).indexOf("คงเหลือ")>=0 && ci>balCol) balCol = ci; });
+  }
+  let remaining = null;
+  if(balCol>=0){
+    for(let ri=rows.length-1; ri>=0; ri--){
+      const n = parseNum((rows[ri]||[])[balCol]);
+      if(!isNaN(n)){ remaining = n; break; }
+    }
+  }
+  let used = (budget!=null && remaining!=null) ? budget - remaining : null;
+  return { budget, used, remaining };
+}
+/* a sheet that states the whole-book appropriation total ("ตามข้อบัญญัติ")
+   is a rollup of the detail tabs — exclude from the sum by default to avoid double counting */
+function isRollupSheet(sheet){
+  const scan = Math.min(8, sheet.rows.length);
+  for(let ri=0; ri<scan; ri++){
+    const line = (sheet.rows[ri]||[]).join(" ");
+    if(line.indexOf("ตามข้อบัญญัติ")>=0) return true;
+  }
+  return false;
+}
+/* merge auto-detection with user overrides stored on sheet._dash */
+function sheetDash(sheet){
+  if(!sheet._dash) sheet._dash = {};
+  const d = sheet._dash;
+  if(d.include===undefined) d.include = !/รายเดือน|คุม|สรุป/.test(sheet.name) && !isRollupSheet(sheet);
+  const auto = detectMetrics(sheet);
+  const budget = (d.budget!=null) ? d.budget : auto.budget;
+  const used   = (d.used!=null)   ? d.used   : auto.used;
+  const remaining = (budget!=null && used!=null) ? budget - used : auto.remaining;
+  return { include:d.include, budget, used, remaining, pct:pctf(used,budget) };
+}
+function dashCard(lbl,val,unit,sub,accent){
+  return `<div class="card ${accent?'accent':''}"><div class="lbl">${lbl}</div>`
+    + `<div class="val">${val}<small>${unit||""}</small></div>`
+    + (sub?`<div class="sub">${sub}</div>`:"") + `</div>`;
+}
+function renderDashboard(){
+  $("#dashYear").textContent = state.year || "";
+  const sheets = state.working.sheets;
+  let tb=0, tu=0; const items=[];
+  sheets.forEach(sh=>{
+    const d = sheetDash(sh);
+    if(!d.include) return;
+    if(d.budget!=null) tb += d.budget;
+    if(d.used!=null)   tu += d.used;
+    if(d.used!=null)   items.push({ name:sh.name, used:d.used, pct:d.pct });
+  });
+  const rem = tb - tu;
+  const opct = tb>0 ? tu/tb*100 : null;
+  $("#dashCards").innerHTML =
+    dashCard("งบประมาณที่ได้รับ", fmt(tb), "บาท", "") +
+    dashCard("ใช้ไปแล้ว", fmt(tu), "บาท", opct!=null ? `${opct.toFixed(1)}% ของงบทั้งหมด` : "", true) +
+    dashCard("คงเหลือ", fmt(rem), "บาท", "");
+
+  items.sort((a,b)=>b.used-a.used);
+  const mx = items.length ? items[0].used : 1;
+  $("#dashBars").innerHTML = items.length ? items.map(it=>{
+    const w = mx>0 ? Math.max(2, it.used/mx*100) : 0;
+    const cls = it.pct==null ? "" : (it.pct>=100 ? "over" : (it.pct>=90 ? "warn" : ""));
+    const pt = it.pct!=null ? ` · ${it.pct.toFixed(0)}% ของหมวด` : "";
+    return `<div class="barrow"><div class="top"><span>${escapeHtml(it.name)}</span>`
+      + `<span class="amt">${fmt(it.used)}${pt}</span></div>`
+      + `<div class="bartrack"><div class="barfill ${cls}" style="width:${w}%"></div></div></div>`;
+  }).join("") : `<p style="color:var(--muted);font-size:14px">ยังไม่พบตัวเลขการเบิกจ่ายที่รวมได้ — เปิด “ตรวจสอบและปรับตัวเลขรายแท็บ” ด้านล่างเพื่อระบุเอง</p>`;
+
+  const warns = items.filter(it=>it.pct!=null && it.pct>=90);
+  $("#dashWarn").innerHTML = warns.length
+    ? `<div class="warnbox"><b>หมวดที่ใช้งบเกือบเต็มหรือเกิน:</b> ${warns.map(w=>`${escapeHtml(w.name)} (${w.pct.toFixed(0)}%)`).join(" · ")}</div>`
+    : "";
+  renderReview();
+}
+function renderReview(){
+  const sheets = state.working.sheets;
+  let h = '<tr><th style="width:32px"></th><th>หมวด / แท็บ</th>'
+    + '<th class="num">งบประมาณ</th><th class="num">ใช้ไป (เบิก)</th>'
+    + '<th class="num">คงเหลือ</th><th class="num">% ใช้</th><th></th></tr>';
+  sheets.forEach((sh,i)=>{
+    const d = sheetDash(sh);
+    h += `<tr><td><input type="checkbox" data-i="${i}" ${d.include?"checked":""}></td>`
+      + `<td>${escapeHtml(sh.name)}</td>`
+      + `<td class="num"><input type="text" data-i="${i}" data-f="budget" value="${d.budget!=null?Math.round(d.budget).toLocaleString("th-TH"):""}"></td>`
+      + `<td class="num"><input type="text" data-i="${i}" data-f="used" value="${d.used!=null?Math.round(d.used).toLocaleString("th-TH"):""}"></td>`
+      + `<td class="num">${fmt(d.remaining)}</td>`
+      + `<td class="num">${d.pct!=null?d.pct.toFixed(0)+"%":"—"}</td>`
+      + `<td><button class="btn btn-ghost btn-sm" data-reset="${i}" title="คำนวณแถวนี้ใหม่">รีเซ็ต</button></td></tr>`;
+  });
+  $("#revTbl").innerHTML = h;
+}
+function setMode(m){
+  state.mode = m;
+  document.querySelectorAll("#modeSeg button").forEach(b=>b.classList.toggle("on", b.dataset.mode===m));
+  $("#editView").classList.toggle("hidden", m!=="edit");
+  $("#dashView").classList.toggle("hidden", m!=="dash");
+  if(m==="dash") renderDashboard(); else moveIndicator();
+}
+
+
 (async function boot(){
   await openIDB();
   wire();
